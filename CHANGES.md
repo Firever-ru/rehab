@@ -21,3 +21,7 @@
 - Исправлено масштабирование главного изображения: вместо процентного значения CSS scale теперь используется числовой коэффициент, поэтому фото больше не уменьшается до миниатюры.
 
 - На мобильных экранах главное фото дополнительно масштабируется на 18%, чтобы кадр не выглядел слишком широким; сохранены выбранные в админке точка фокуса и масштаб.
+
+### Static hero framing fix
+- The homepage now displays the backend-generated cropped hero image with `object-fit: fill`.
+- The complete saved crop is shown at every viewport size instead of recalculating a new crop with `cover`.
