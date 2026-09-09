@@ -62,6 +62,19 @@ export default function Home() {
   }, [open]);
 
   const heroImage = content.hero_image || heroFallback;
+  // The photo is framed live with CSS custom properties instead of a
+  // server-side crop, so it always fills the hero box correctly no matter
+  // the viewport's aspect ratio, and the admin's live preview always
+  // matches what visitors see. Desktop and mobile keep independent
+  // position/zoom values; the CSS switches between them at 800px.
+  const heroStyle = {
+    '--hero-position-x': `${content.hero_position_x ?? 50}%`,
+    '--hero-position-y': `${content.hero_position_y ?? 50}%`,
+    '--hero-zoom': `${(content.hero_zoom ?? 100) / 100}`,
+    '--hero-position-x-mobile': `${content.hero_mobile_position_x ?? 50}%`,
+    '--hero-position-y-mobile': `${content.hero_mobile_position_y ?? 50}%`,
+    '--hero-zoom-mobile': `${(content.hero_mobile_zoom ?? 100) / 100}`,
+  };
   const quote = content.quotes[quoteIndex] || DEFAULT_CONTENT.quotes[0];
   const telHref = `tel:${contacts.phone.replace(/[^\d+]/g, '')}`;
   const instagramUrl = contacts.instagram.startsWith('http')
@@ -78,10 +91,12 @@ export default function Home() {
       </section>
 
       <section className="hero">
-        <picture>
-          <source media="(max-width: 800px)" srcSet={content.hero_mobile_image || heroImage} />
-          <img className="hero-image" src={heroImage} alt={content.title || 'Второе дыхание'} />
-        </picture>
+        <img
+          className="hero-image"
+          src={heroImage}
+          alt={content.title || 'Второе дыхание'}
+          style={heroStyle}
+        />
         <div className="hero-overlay"></div>
         <div className="hero-content">
           <h1 className="hero-title">

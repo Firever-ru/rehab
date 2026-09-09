@@ -21,8 +21,15 @@ a{text-decoration:none;color:inherit}
 .quote i{color:#d1b887}
 
 .hero{height:clamp(680px,82vh,900px);background:#171713;position:relative;display:flex;align-items:flex-end;overflow:hidden}
-.hero>picture{position:absolute;inset:0;display:block;width:100%;height:100%}
-.hero-image{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center;transform:none;will-change:auto}
+/* The hero box's own aspect ratio changes with viewport size (it's a fixed
+   height + 100% width, not a locked ratio), so instead of relying on
+   object-fit to re-crop an already server-cropped photo (which drifted from
+   what the admin picked and caused stretching/mis-cropping on different
+   screens), we always show the full, uncropped source photo and frame it
+   live with object-position + a scale transform driven by the admin's saved
+   position/zoom. object-fit:cover is kept only as a safety net so the photo
+   never leaves gaps; the real framing comes from the CSS variables. */
+.hero-image{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:var(--hero-position-x,50%) var(--hero-position-y,50%);transform:scale(var(--hero-zoom,1));transform-origin:center;will-change:transform}
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,#16150f25 0%,#16150f10 35%,#0b0b096e 100%)}
 .hero-content{position:relative;z-index:2;color:#f5ead6;text-align:center;width:100%;padding:0 20px 90px}
 .hero-title{font-family:'Cormorant Garamond',serif;font-size:clamp(40px,6vw,82px);line-height:.9;letter-spacing:.01em;text-shadow:0 3px 20px #0008}
@@ -115,6 +122,7 @@ th{font-size:9px;color:#817967;text-transform:uppercase}
 .quote{min-height:230px;padding-top:90px}
 .hero{height:720px}
 .hero-content{padding-bottom:60px}
+.hero-image{object-position:var(--hero-position-x-mobile,50%) var(--hero-position-y-mobile,50%);transform:scale(var(--hero-zoom-mobile,1))}
 .intro,.application,.contacts{grid-template-columns:1fr;gap:45px;padding-top:80px;padding-bottom:80px}
 .descriptions{grid-template-columns:1fr;gap:55px;padding-top:75px;padding-bottom:75px}
 .dashboard{grid-template-columns:1fr}
@@ -161,8 +169,6 @@ th{font-size:9px;color:#817967;text-transform:uppercase}
 
 .hero-cropper.mobile-preview{aspect-ratio:9/16;max-width:360px;max-height:620px}
 .hero-cropper.desktop-preview{aspect-ratio:16/9;max-width:900px;max-height:none}
-
-/* The backend stores a fixed cropped 16:7 image. Fill the hero box so the same complete crop is shown on every viewport size. */
 
 .crop-mode-switch{display:flex;gap:8px;margin:12px 0 14px}
 .crop-mode-switch button{border:1px solid #cdbfa8;background:#fffaf0;color:#6e6558;padding:10px 16px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;cursor:pointer}
