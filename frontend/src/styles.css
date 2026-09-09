@@ -168,3 +168,14 @@ th{font-size:9px;color:#817967;text-transform:uppercase}
 .crop-mode-switch button{border:1px solid #cdbfa8;background:#fffaf0;color:#6e6558;padding:10px 16px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;cursor:pointer}
 .crop-mode-switch button.active{background:#20201b;color:#eee5d4;border-color:#20201b}
 .hero-cropper.mobile-preview{margin-left:0}
+
+/* Crop handles: resize the selected area from sides and corners while keeping its aspect ratio. */
+.crop-frame{position:absolute;inset:0;pointer-events:none;border:2px solid rgba(255,250,240,.9);box-shadow:0 0 0 9999px rgba(0,0,0,.12)}
+.crop-frame .crop-grid-v,.crop-frame .crop-grid-h{position:absolute;display:block;background:rgba(255,250,240,.22);pointer-events:none}
+.crop-frame .crop-grid-v{top:0;bottom:0;width:1px}.crop-frame .crop-grid-v:nth-child(1){left:33.333%}.crop-frame .crop-grid-v:nth-child(2){left:66.666%}
+.crop-frame .crop-grid-h{left:0;right:0;height:1px}.crop-frame .crop-grid-h:nth-child(3){top:33.333%}.crop-frame .crop-grid-h:nth-child(4){top:66.666%}
+.crop-handle{position:absolute;display:block;width:18px;height:18px;background:#fffaf0;border:2px solid #20201b;border-radius:3px;pointer-events:auto;z-index:4;box-sizing:border-box}
+.crop-handle-top-left{left:-9px;top:-9px;cursor:nwse-resize}.crop-handle-top{left:50%;top:-9px;transform:translateX(-50%);cursor:ns-resize}.crop-handle-top-right{right:-9px;top:-9px;cursor:nesw-resize}
+.crop-handle-right{right:-9px;top:50%;transform:translateY(-50%);cursor:ew-resize}.crop-handle-bottom-right{right:-9px;bottom:-9px;cursor:nwse-resize}.crop-handle-bottom{left:50%;bottom:-9px;transform:translateX(-50%);cursor:ns-resize}
+.crop-handle-bottom-left{left:-9px;bottom:-9px;cursor:nesw-resize}.crop-handle-left{left:-9px;top:50%;transform:translateY(-50%);cursor:ew-resize}
+.crop-frame .crop-handle:hover{background:#fff}

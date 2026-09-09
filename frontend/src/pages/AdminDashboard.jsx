@@ -268,8 +268,10 @@ export default function AdminDashboard() {
                     ref={cropRef}
                     className={`hero-cropper ${mobile ? 'mobile-preview' : 'desktop-preview'} ${dragRef.current ? 'is-dragging' : ''}`}
                     onPointerDown={(e) => {
+                      if (e.target.closest('.crop-handle')) return;
                       e.currentTarget.setPointerCapture(e.pointerId);
                       dragRef.current = {
+                        type: 'move',
                         pointerId: e.pointerId,
                         startX: e.clientX,
                         startY: e.clientY,
@@ -283,11 +285,23 @@ export default function AdminDashboard() {
                       const box = cropRef.current;
                       if (!drag || !box || e.pointerId !== drag.pointerId) return;
                       const rect = box.getBoundingClientRect();
-                      const sensitivityX = 100 / Math.max(1, rect.width);
-                      const sensitivityY = 100 / Math.max(1, rect.height);
-                      const nextX = Math.max(0, Math.min(100, drag.x - (e.clientX - drag.startX) * sensitivityX));
-                      const nextY = Math.max(0, Math.min(100, drag.y - (e.clientY - drag.startY) * sensitivityY));
-                      updateCrop({ [xKey]: Math.round(nextX), [yKey]: Math.round(nextY) });
+
+                      if (drag.type === 'move') {
+                        const sensitivityX = 100 / Math.max(1, rect.width);
+                        const sensitivityY = 100 / Math.max(1, rect.height);
+                        const nextX = Math.max(0, Math.min(100, drag.x - (e.clientX - drag.startX) * sensitivityX));
+                        const nextY = Math.max(0, Math.min(100, drag.y - (e.clientY - drag.startY) * sensitivityY));
+                        updateCrop({ [xKey]: Math.round(nextX), [yKey]: Math.round(nextY) });
+                        return;
+                      }
+
+                      const dx = e.clientX - drag.startX;
+                      const dy = e.clientY - drag.startY;
+                      const distance = Math.max(Math.abs(dx), Math.abs(dy));
+                      const direction = drag.handle.includes('right') || drag.handle.includes('bottom') ? -1 : 1;
+                      const sensitivity = 0.55;
+                      const nextZoom = Math.max(100, Math.min(220, Math.round(drag.zoom + direction * distance * sensitivity)));
+                      updateCrop({ [zoomKey]: nextZoom });
                     }}
                     onPointerUp={(e) => {
                       if (dragRef.current?.pointerId === e.pointerId) dragRef.current = null;
@@ -300,10 +314,29 @@ export default function AdminDashboard() {
                   >
                     <img src={previewSrc} alt="Предпросмотр кадрирования" draggable="false" style={previewStyle} />
                     <div className="crop-frame" aria-hidden="true">
-                      <span /><span /><span /><span /><i /><i /><i /><i />
+                      <span className="crop-grid-v" /><span className="crop-grid-v" />
+                      <span className="crop-grid-h" /><span className="crop-grid-h" />
+                      {['top-left','top','top-right','right','bottom-right','bottom','bottom-left','left'].map((handle) => (
+                        <span
+                          key={handle}
+                          className={`crop-handle crop-handle-${handle}`}
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            e.currentTarget.parentElement.parentElement.setPointerCapture(e.pointerId);
+                            dragRef.current = {
+                              type: 'resize',
+                              pointerId: e.pointerId,
+                              handle,
+                              startX: e.clientX,
+                              startY: e.clientY,
+                              zoom: Number(content[zoomKey]) || 100,
+                            };
+                          }}
+                        />
+                      ))}
                     </div>
                     <div className="crop-help">
-                      {mobile ? 'Кадр для телефона · 9:16' : 'Кадр для компьютера · 16:9'}
+                      {mobile ? 'Телефон · 9:16 — тяните за края или углы' : 'Компьютер · 16:9 — тяните за края или углы'}
                     </div>
                   </div>
 
