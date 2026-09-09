@@ -67,7 +67,7 @@ export default function Home() {
   const heroStyle = {
     '--hero-position-x': `${content.hero_position_x ?? 50}%`,
     '--hero-position-y': `${content.hero_position_y ?? 50}%`,
-    '--hero-zoom': `${content.hero_zoom ?? 100}%`,
+    '--hero-zoom': `${(content.hero_zoom ?? 100) / 100}`,
   };
 
   return (
