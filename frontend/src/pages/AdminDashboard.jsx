@@ -2,6 +2,21 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api.js';
 
+// Unit vectors pointing from the crop frame's center toward each corner /
+// edge handle, used to tell whether a drag moves a handle outward (away
+// from center, i.e. zoom out) or inward (toward center, i.e. zoom in).
+const INV_SQRT2 = 1 / Math.SQRT2;
+const HANDLE_DIRECTIONS = {
+  'top-left': [-INV_SQRT2, -INV_SQRT2],
+  top: [0, -1],
+  'top-right': [INV_SQRT2, -INV_SQRT2],
+  right: [1, 0],
+  'bottom-right': [INV_SQRT2, INV_SQRT2],
+  bottom: [0, 1],
+  'bottom-left': [-INV_SQRT2, INV_SQRT2],
+  left: [-1, 0],
+};
+
 const EMPTY_CONTENT = {
   title: '',
   description: '',
@@ -297,10 +312,16 @@ export default function AdminDashboard() {
 
                       const dx = e.clientX - drag.startX;
                       const dy = e.clientY - drag.startY;
-                      const distance = Math.max(Math.abs(dx), Math.abs(dy));
-                      const direction = drag.handle.includes('right') || drag.handle.includes('bottom') ? -1 : 1;
-                      const sensitivity = 0.55;
-                      const nextZoom = Math.max(100, Math.min(220, Math.round(drag.zoom + direction * distance * sensitivity)));
+                      // Project the pointer movement onto the direction that
+                      // points outward from the frame's center toward this
+                      // handle, so dragging a corner AWAY from center always
+                      // enlarges the visible crop (zooms out) and dragging it
+                      // TOWARD the center always tightens the crop (zooms in)
+                      // — regardless of which of the 8 handles is used.
+                      const [ux, uy] = HANDLE_DIRECTIONS[drag.handle];
+                      const outwardDistance = dx * ux + dy * uy;
+                      const sensitivity = 0.6;
+                      const nextZoom = Math.max(100, Math.min(220, Math.round(drag.zoom - outwardDistance * sensitivity)));
                       updateCrop({ [zoomKey]: nextZoom });
                     }}
                     onPointerUp={(e) => {
@@ -312,7 +333,9 @@ export default function AdminDashboard() {
                       e.currentTarget.classList.remove('is-dragging');
                     }}
                   >
-                    <img src={previewSrc} alt="Предпросмотр кадрирования" draggable="false" style={previewStyle} />
+                    <div className="hero-cropper-clip">
+                      <img src={previewSrc} alt="Предпросмотр кадрирования" draggable="false" style={previewStyle} />
+                    </div>
                     <div className="crop-frame" aria-hidden="true">
                       <span className="crop-grid-v" /><span className="crop-grid-v" />
                       <span className="crop-grid-h" /><span className="crop-grid-h" />
