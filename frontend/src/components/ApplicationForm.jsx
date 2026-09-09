@@ -90,7 +90,6 @@ export default function ApplicationForm() {
       <button className="gold-button" type="submit" disabled={loading}>
         {loading ? 'Отправляем…' : 'Оставить заявку'}
       </button>
-      <p className="privacy">Нажимая кнопку, вы соглашаетесь на обработку персональных данных.</p>
     </form>
   );
 }

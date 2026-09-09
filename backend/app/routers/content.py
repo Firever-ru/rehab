@@ -44,8 +44,13 @@ def get_content(db: Session = Depends(get_db)):
     return ContentOut(
         title=row.title,
         description=row.description,
+        description_2=row.description_2 or "",
+        description_3=row.description_3 or "",
         quotes=json.loads(row.quotes_json),
         hero_image=row.hero_image,
+        hero_position_x=row.hero_position_x,
+        hero_position_y=row.hero_position_y,
+        hero_zoom=row.hero_zoom,
     )
 
 
@@ -54,10 +59,25 @@ def update_content(data: ContentIn, db: Session = Depends(get_db), admin: str = 
     row = _get_or_create_content(db)
     row.title = data.title
     row.description = data.description
+    row.description_2 = data.description_2
+    row.description_3 = data.description_3
     row.quotes_json = json.dumps(data.quotes, ensure_ascii=False)
+    row.hero_position_x = data.hero_position_x
+    row.hero_position_y = data.hero_position_y
+    row.hero_zoom = data.hero_zoom
     db.commit()
     db.refresh(row)
-    return ContentOut(title=row.title, description=row.description, quotes=data.quotes, hero_image=row.hero_image)
+    return ContentOut(
+        title=row.title,
+        description=row.description,
+        description_2=row.description_2 or "",
+        description_3=row.description_3 or "",
+        quotes=data.quotes,
+        hero_image=row.hero_image,
+        hero_position_x=row.hero_position_x,
+        hero_position_y=row.hero_position_y,
+        hero_zoom=row.hero_zoom,
+    )
 
 
 @router.post("/content/hero-image", response_model=ContentOut)
@@ -81,7 +101,17 @@ async def upload_hero_image(
     row.hero_image = f"/media/{filename}"
     db.commit()
     db.refresh(row)
-    return ContentOut(title=row.title, description=row.description, quotes=json.loads(row.quotes_json), hero_image=row.hero_image)
+    return ContentOut(
+        title=row.title,
+        description=row.description,
+        description_2=row.description_2 or "",
+        description_3=row.description_3 or "",
+        quotes=json.loads(row.quotes_json),
+        hero_image=row.hero_image,
+        hero_position_x=row.hero_position_x,
+        hero_position_y=row.hero_position_y,
+        hero_zoom=row.hero_zoom,
+    )
 
 
 @router.get("/contacts", response_model=ContactsOut)

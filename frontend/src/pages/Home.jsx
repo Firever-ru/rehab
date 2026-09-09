@@ -7,8 +7,13 @@ import heroFallback from '../assets/hero.jfif';
 const DEFAULT_CONTENT = {
   title: 'Реабилитационный центр «Второе дыхание»',
   description: 'Помогаем вернуться к устойчивой и самостоятельной жизни.',
+  description_2: '',
+  description_3: '',
   quotes: ['Иногда новая жизнь начинается с одного честного решения.'],
   hero_image: null,
+  hero_position_x: 50,
+  hero_position_y: 50,
+  hero_zoom: 100,
 };
 
 const DEFAULT_CONTACTS = {
@@ -18,12 +23,13 @@ const DEFAULT_CONTACTS = {
   instagram: 'vtoroe_dyhanie_centr',
 };
 
-const values = [
-  ['01', 'ПОМОЩЬ', 'Профессиональная поддержка на каждом этапе'],
-  ['02', 'ИНДИВИДУАЛЬНЫЙ ПОДХОД', 'Программа реабилитации для каждого человека'],
-  ['03', 'ВОССТАНОВЛЕНИЕ', 'Комплексная работа для души и тела'],
-  ['04', 'НОВАЯ ЖИЗНЬ', 'Возвращаем веру в себя и строим будущее вместе'],
-];
+function renderParagraphs(text) {
+  return String(text || '')
+    .split(/\n\s*\n/)
+    .map((paragraph, index) => paragraph.trim())
+    .filter(Boolean)
+    .map((paragraph, index) => <p key={index}>{paragraph}</p>);
+}
 
 export default function Home() {
   const [open, setOpen] = useState(false);
@@ -58,19 +64,27 @@ export default function Home() {
     ? contacts.instagram
     : `https://instagram.com/${contacts.instagram}`;
 
+  const heroStyle = {
+    '--hero-position-x': `${content.hero_position_x ?? 50}%`,
+    '--hero-position-y': `${content.hero_position_y ?? 50}%`,
+    '--hero-zoom': `${content.hero_zoom ?? 100}%`,
+  };
+
   return (
     <div id="top" className="page">
       <Header phone={contacts.phone} />
 
-      <section className="hero" style={{ backgroundImage: `url(${heroImage})` }}>
+      <section className="quote quote-top">
+        <div>«{quote}»</div>
+      </section>
+
+      <section className="hero" style={heroStyle}>
+        <img className="hero-image" src={heroImage} alt={content.title || 'Второе дыхание'} />
         <div className="hero-overlay"></div>
         <div className="hero-content">
-          <div className="hero-title">
-            Реабилитационный
-            <br />
-            <strong>центр «Второе дыхание»</strong>
-          </div>
-          <p>Шанс. Поддержка. Новая жизнь.</p>
+          <h1 className="hero-title">
+            {content.title || 'Реабилитационный центр «Второе дыхание»'}
+          </h1>
           <button className="hero-button" onClick={() => setOpen(true)}>
             Оставить заявку <span>→</span>
           </button>
@@ -87,35 +101,31 @@ export default function Home() {
           </h1>
         </div>
         <div className="intro-text">
-          <p>{content.description}</p>
-          <p>Мы рядом на каждом этапе пути. Бережно, уважительно и без лишних обещаний.</p>
+          {renderParagraphs(content.description)}
           <button className="text-link" onClick={() => setOpen(true)}>
             Получить консультацию <span>→</span>
           </button>
         </div>
       </section>
 
-      <section id="values" className="values">
-        <div className="section-head">
-          <span className="eyebrow">НАШ ПОДХОД</span>
-          <h2>
-            Ты можешь. <i>Мы рядом.</i>
-          </h2>
-        </div>
-        <div className="values-grid">
-          {values.map(([n, t, d]) => (
-            <article key={n}>
-              <span>{n}</span>
-              <h3>{t}</h3>
-              <p>{d}</p>
+      {(content.description_2 || content.description_3) && (
+        <section className="descriptions">
+          {content.description_2 && (
+            <article>
+              <span className="eyebrow">ВОССТАНОВЛЕНИЕ</span>
+              <h2>Шаг за шагом</h2>
+              <div className="description-text">{renderParagraphs(content.description_2)}</div>
             </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="quote">
-        <div>«{quote}»</div>
-      </section>
+          )}
+          {content.description_3 && (
+            <article>
+              <span className="eyebrow">ПОДДЕРЖКА</span>
+              <h2>Мы рядом</h2>
+              <div className="description-text">{renderParagraphs(content.description_3)}</div>
+            </article>
+          )}
+        </section>
+      )}
 
       <section id="application" className="application">
         <div>
@@ -148,10 +158,11 @@ export default function Home() {
           <a href={instagramUrl} target="_blank" rel="noreferrer">
             Instagram · {contacts.instagram}
           </a>
+          <small className="social-note">Meta признана экстремистской организацией; её деятельность запрещена на территории РФ.</small>
         </div>
       </section>
 
-      <footer>© 2026 «Второе дыхание» · Реабилитационный центр в Новосибирске</footer>
+      <footer>© 2026 «Второе дыхание»</footer>
 
       {open && (
         <div

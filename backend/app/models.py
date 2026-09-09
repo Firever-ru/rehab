@@ -4,7 +4,7 @@ from .database import Base
 
 
 class Application(Base):
-    """Заявки с сайта. name/phone хранятся в зашифрованном виде (см. crypto.py)."""
+    """Заявки с сайта."""
 
     __tablename__ = "applications"
 
@@ -15,15 +15,20 @@ class Application(Base):
 
 
 class SiteContent(Base):
-    """Единственная строка с редактируемым содержимым главной страницы."""
+    """Редактируемое содержимое главной страницы."""
 
     __tablename__ = "site_content"
 
     id = Column(Integer, primary_key=True, default=1)
     title = Column(String(300), nullable=False, default="Реабилитационный центр «Второе дыхание»")
     description = Column(Text, nullable=False, default="Помогаем вернуться к устойчивой и самостоятельной жизни.")
-    quotes_json = Column(Text, nullable=False, default="[]")  # JSON-массив строк
-    hero_image = Column(String(300), nullable=True)  # относительный путь /media/...
+    description_2 = Column(Text, nullable=False, default="")
+    description_3 = Column(Text, nullable=False, default="")
+    quotes_json = Column(Text, nullable=False, default="[]")
+    hero_image = Column(String(300), nullable=True)
+    hero_position_x = Column(Integer, nullable=False, default=50)
+    hero_position_y = Column(Integer, nullable=False, default=50)
+    hero_zoom = Column(Integer, nullable=False, default=100)
 
 
 class Contacts(Base):

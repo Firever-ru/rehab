@@ -26,8 +26,7 @@ export default function AdminLogin() {
   return (
     <main className="admin-page">
       <form className="admin-login" onSubmit={submit}>
-        <span className="eyebrow">СЛУЖЕБНЫЙ ВХОД</span>
-        <h1>Админ-панель</h1>
+        <h1>Служебный вход</h1>
         <label>
           Логин
           <input value={login} onChange={(e) => setLogin(e.target.value)} required disabled={loading} />

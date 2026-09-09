@@ -147,9 +147,32 @@ docker compose exec db pg_dump -U vtoroe_app vtoroe_dyhanie | gzip > backup_$(da
 
 ## 8. Обновление после изменений в коде
 
+На текущем сервере проект может находиться в `~/rehab`. Если это ваш каталог с клонированным репозиторием:
+
 ```bash
-cd /home/deploy/vtoroe-dyhanie
-git pull
+cd ~/rehab
+git status
+git pull origin main
 docker compose build frontend backend
 docker compose up -d --no-deps frontend backend
 ```
+
+После обновления проверьте:
+
+```bash
+docker compose ps
+docker compose logs --tail=100 backend
+curl -I https://vtoroedyhaniecenter.ru
+curl https://vtoroedyhaniecenter.ru/robots.txt
+curl https://vtoroedyhaniecenter.ru/sitemap.xml
+```
+
+Если изменения были только во frontend, достаточно пересобрать его:
+
+```bash
+docker compose build frontend
+docker compose up -d --no-deps frontend
+```
+
+Если изменялся backend, пересоберите и перезапустите backend. Новые поля базы данных из этой версии добавляются автоматически при старте backend без удаления существующих данных.
+

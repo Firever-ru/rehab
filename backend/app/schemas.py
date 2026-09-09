@@ -39,14 +39,24 @@ class LoginRequest(BaseModel):
 class ContentIn(BaseModel):
     title: str = Field(min_length=1, max_length=300)
     description: str = Field(min_length=1)
+    description_2: str = ""
+    description_3: str = ""
     quotes: list[str] = Field(default_factory=list, max_length=20)
+    hero_position_x: int = Field(default=50, ge=0, le=100)
+    hero_position_y: int = Field(default=50, ge=0, le=100)
+    hero_zoom: int = Field(default=100, ge=100, le=160)
 
 
 class ContentOut(BaseModel):
     title: str
     description: str
+    description_2: str = ""
+    description_3: str = ""
     quotes: list[str]
     hero_image: str | None = None
+    hero_position_x: int = 50
+    hero_position_y: int = 50
+    hero_zoom: int = 100
 
 
 class ContactsIn(BaseModel):
