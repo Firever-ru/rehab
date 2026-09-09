@@ -11,9 +11,13 @@ const DEFAULT_CONTENT = {
   description_3: '',
   quotes: ['Иногда новая жизнь начинается с одного честного решения.'],
   hero_image: null,
+  hero_mobile_image: null,
   hero_position_x: 50,
   hero_position_y: 50,
   hero_zoom: 100,
+  hero_mobile_position_x: 50,
+  hero_mobile_position_y: 50,
+  hero_mobile_zoom: 100,
 };
 
 const DEFAULT_CONTACTS = {
@@ -64,8 +68,6 @@ export default function Home() {
     ? contacts.instagram
     : `https://instagram.com/${contacts.instagram}`;
 
-  // The backend stores the final cropped image, so the same pixels are shown on every device.
-  const heroStyle = {};
 
   return (
     <div id="top" className="page">
@@ -75,8 +77,11 @@ export default function Home() {
         <div>«{quote}»</div>
       </section>
 
-      <section className="hero" style={heroStyle}>
-        <img className="hero-image" src={heroImage} alt={content.title || 'Второе дыхание'} />
+      <section className="hero">
+        <picture>
+          <source media="(max-width: 800px)" srcSet={content.hero_mobile_image || heroImage} />
+          <img className="hero-image" src={heroImage} alt={content.title || 'Второе дыхание'} />
+        </picture>
         <div className="hero-overlay"></div>
         <div className="hero-content">
           <h1 className="hero-title">

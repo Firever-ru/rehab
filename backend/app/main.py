@@ -43,6 +43,10 @@ def on_startup():
         "hero_position_y": "ALTER TABLE site_content ADD COLUMN hero_position_y INTEGER NOT NULL DEFAULT 50",
         "hero_zoom": "ALTER TABLE site_content ADD COLUMN hero_zoom INTEGER NOT NULL DEFAULT 100",
         "hero_source_image": "ALTER TABLE site_content ADD COLUMN hero_source_image VARCHAR(300)",
+        "hero_mobile_image": "ALTER TABLE site_content ADD COLUMN hero_mobile_image VARCHAR(300)",
+        "hero_mobile_position_x": "ALTER TABLE site_content ADD COLUMN hero_mobile_position_x INTEGER NOT NULL DEFAULT 50",
+        "hero_mobile_position_y": "ALTER TABLE site_content ADD COLUMN hero_mobile_position_y INTEGER NOT NULL DEFAULT 50",
+        "hero_mobile_zoom": "ALTER TABLE site_content ADD COLUMN hero_mobile_zoom INTEGER NOT NULL DEFAULT 100",
     }
     with engine.begin() as connection:
         for column, statement in migrations.items():

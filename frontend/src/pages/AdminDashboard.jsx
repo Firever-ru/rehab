@@ -10,9 +10,13 @@ const EMPTY_CONTENT = {
   quotes: [],
   hero_image: null,
   hero_source_image: null,
+  hero_mobile_image: null,
   hero_position_x: 50,
   hero_position_y: 50,
   hero_zoom: 100,
+  hero_mobile_position_x: 50,
+  hero_mobile_position_y: 50,
+  hero_mobile_zoom: 100,
 };
 
 export default function AdminDashboard() {
@@ -27,6 +31,7 @@ export default function AdminDashboard() {
   const [contentSaving, setContentSaving] = useState(false);
   const [contactsSaving, setContactsSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [cropMode, setCropMode] = useState('desktop');
   const [notice, setNotice] = useState('');
   const cropRef = useRef(null);
   const dragRef = useRef(null);
@@ -62,6 +67,9 @@ export default function AdminDashboard() {
         hero_position_x: Number(content.hero_position_x),
         hero_position_y: Number(content.hero_position_y),
         hero_zoom: Number(content.hero_zoom),
+        hero_mobile_position_x: Number(content.hero_mobile_position_x),
+        hero_mobile_position_y: Number(content.hero_mobile_position_y),
+        hero_mobile_zoom: Number(content.hero_mobile_zoom),
       });
       setContent((c) => ({ ...c, ...saved }));
       flash('Изменения сохранены');
@@ -92,7 +100,7 @@ export default function AdminDashboard() {
       const form = new FormData();
       form.append('file', file);
       const saved = await api.post('/content/hero-image', form);
-      setContent((c) => ({ ...c, hero_image: saved.hero_image, hero_source_image: saved.hero_source_image || saved.hero_image, hero_position_x: 50, hero_position_y: 50, hero_zoom: 100 }));
+      setContent((c) => ({ ...c, ...saved, hero_position_x: 50, hero_position_y: 50, hero_zoom: 100, hero_mobile_position_x: 50, hero_mobile_position_y: 50, hero_mobile_zoom: 100 }));
       flash('Фото обновлено. Настройте кадрирование и сохраните изменения.');
     } catch {
       flash('Не удалось загрузить фото (JPEG/PNG/WEBP, до 8 МБ).');
@@ -231,83 +239,96 @@ export default function AdminDashboard() {
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadPhoto} disabled={uploading} />
             </label>
 
-            {(content.hero_source_image || content.hero_image) && (
-              <>
-                <div
-                  ref={cropRef}
-                  className={`hero-cropper ${dragRef.current ? 'is-dragging' : ''}`}
-                  onPointerDown={(e) => {
-                    e.currentTarget.setPointerCapture(e.pointerId);
-                    dragRef.current = {
-                      pointerId: e.pointerId,
-                      startX: e.clientX,
-                      startY: e.clientY,
-                      x: Number(content.hero_position_x) || 50,
-                      y: Number(content.hero_position_y) || 50,
-                    };
-                    e.currentTarget.classList.add('is-dragging');
-                  }}
-                  onPointerMove={(e) => {
-                    const drag = dragRef.current;
-                    const box = cropRef.current;
-                    if (!drag || !box || e.pointerId !== drag.pointerId) return;
-                    const rect = box.getBoundingClientRect();
-                    const sensitivity = 100 / Math.max(1, rect.width);
-                    const nextX = Math.max(0, Math.min(100, drag.x - (e.clientX - drag.startX) * sensitivity));
-                    const nextY = Math.max(0, Math.min(100, drag.y - (e.clientY - drag.startY) * sensitivity));
-                    setContent((c) => ({ ...c, hero_position_x: Math.round(nextX), hero_position_y: Math.round(nextY) }));
-                  }}
-                  onPointerUp={(e) => {
-                    if (dragRef.current?.pointerId === e.pointerId) dragRef.current = null;
-                    e.currentTarget.classList.remove('is-dragging');
-                  }}
-                  onPointerCancel={(e) => {
-                    if (dragRef.current?.pointerId === e.pointerId) dragRef.current = null;
-                    e.currentTarget.classList.remove('is-dragging');
-                  }}
-                >
-                  <img
-                    src={content.hero_source_image || content.hero_image}
-                    alt="Предпросмотр главного фото"
-                    draggable="false"
-                    style={{
-                      '--hero-position-x': `${content.hero_position_x}%`,
-                      '--hero-position-y': `${content.hero_position_y}%`,
-                      '--hero-zoom': `${(content.hero_zoom ?? 100) / 100}`,
-                    }}
-                  />
-                  <div className="crop-frame" aria-hidden="true">
-                    <span />
-                    <span />
-                    <span />
-                    <span />
-                    <i />
-                    <i />
-                    <i />
-                    <i />
-                  </div>
-                  <div className="crop-help">Перетаскивайте фото для кадрирования</div>
-                </div>
+            {(content.hero_source_image || content.hero_image) && (() => {
+              const mobile = cropMode === 'mobile';
+              const xKey = mobile ? 'hero_mobile_position_x' : 'hero_position_x';
+              const yKey = mobile ? 'hero_mobile_position_y' : 'hero_position_y';
+              const zoomKey = mobile ? 'hero_mobile_zoom' : 'hero_zoom';
+              const previewSrc = content.hero_source_image || content.hero_image;
+              const previewStyle = {
+                '--hero-position-x': `${content[xKey] ?? 50}%`,
+                '--hero-position-y': `${content[yKey] ?? 50}%`,
+                '--hero-zoom': `${(content[zoomKey] ?? 100) / 100}`,
+              };
 
-                <div className="image-controls">
-                  <label>
-                    Масштаб: {content.hero_zoom}%
-                    <input
-                      type="range" min="100" max="220" value={content.hero_zoom}
-                      onChange={(e) => setContent((c) => ({ ...c, hero_zoom: Number(e.target.value) }))}
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    className="outline crop-reset"
-                    onClick={() => setContent((c) => ({ ...c, hero_position_x: 50, hero_position_y: 50, hero_zoom: 100 }))}
+              const updateCrop = (changes) => setContent((c) => ({ ...c, ...changes }));
+
+              return (
+                <>
+                  <div className="crop-mode-switch">
+                    <button type="button" className={cropMode === 'desktop' ? 'active' : ''} onClick={() => setCropMode('desktop')}>
+                      Компьютер
+                    </button>
+                    <button type="button" className={cropMode === 'mobile' ? 'active' : ''} onClick={() => setCropMode('mobile')}>
+                      Телефон
+                    </button>
+                  </div>
+
+                  <div
+                    ref={cropRef}
+                    className={`hero-cropper ${mobile ? 'mobile-preview' : ''} ${dragRef.current ? 'is-dragging' : ''}`}
+                    onPointerDown={(e) => {
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                      dragRef.current = {
+                        pointerId: e.pointerId,
+                        startX: e.clientX,
+                        startY: e.clientY,
+                        x: Number(content[xKey]) || 50,
+                        y: Number(content[yKey]) || 50,
+                      };
+                      e.currentTarget.classList.add('is-dragging');
+                    }}
+                    onPointerMove={(e) => {
+                      const drag = dragRef.current;
+                      const box = cropRef.current;
+                      if (!drag || !box || e.pointerId !== drag.pointerId) return;
+                      const rect = box.getBoundingClientRect();
+                      const sensitivityX = 100 / Math.max(1, rect.width);
+                      const sensitivityY = 100 / Math.max(1, rect.height);
+                      const nextX = Math.max(0, Math.min(100, drag.x - (e.clientX - drag.startX) * sensitivityX));
+                      const nextY = Math.max(0, Math.min(100, drag.y - (e.clientY - drag.startY) * sensitivityY));
+                      updateCrop({ [xKey]: Math.round(nextX), [yKey]: Math.round(nextY) });
+                    }}
+                    onPointerUp={(e) => {
+                      if (dragRef.current?.pointerId === e.pointerId) dragRef.current = null;
+                      e.currentTarget.classList.remove('is-dragging');
+                    }}
+                    onPointerCancel={(e) => {
+                      if (dragRef.current?.pointerId === e.pointerId) dragRef.current = null;
+                      e.currentTarget.classList.remove('is-dragging');
+                    }}
                   >
-                    Сбросить кадр
-                  </button>
-                </div>
-                <p className="field-hint">Зажмите фото и перетащите его. Рамка показывает, какая область попадёт на сайт. На телефоне работает пальцем.</p>
-              </>
-            )}
+                    <img src={previewSrc} alt="Предпросмотр кадрирования" draggable="false" style={previewStyle} />
+                    <div className="crop-frame" aria-hidden="true">
+                      <span /><span /><span /><span /><i /><i /><i /><i />
+                    </div>
+                    <div className="crop-help">
+                      {mobile ? 'Кадр для телефона · 9:16' : 'Кадр для компьютера · 16:9'}
+                    </div>
+                  </div>
+
+                  <div className="image-controls">
+                    <label>
+                      Масштаб: {content[zoomKey] ?? 100}%
+                      <input
+                        type="range" min="100" max="220" value={content[zoomKey] ?? 100}
+                        onChange={(e) => updateCrop({ [zoomKey]: Number(e.target.value) })}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="outline crop-reset"
+                      onClick={() => updateCrop({ [xKey]: 50, [yKey]: 50, [zoomKey]: 100 })}
+                    >
+                      Сбросить кадр
+                    </button>
+                  </div>
+                  <p className="field-hint">
+                    Для одного и того же исходного фото задаётся отдельный кадр для компьютера и телефона. На телефоне сохраняется вертикальная композиция 9:16, без растягивания.
+                  </p>
+                </>
+              );
+            })()}
           </div>
 
           <button className="gold-button" onClick={saveContent} disabled={contentSaving}>
