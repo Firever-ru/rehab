@@ -64,11 +64,8 @@ export default function Home() {
     ? contacts.instagram
     : `https://instagram.com/${contacts.instagram}`;
 
-  const heroStyle = {
-    '--hero-position-x': `${content.hero_position_x ?? 50}%`,
-    '--hero-position-y': `${content.hero_position_y ?? 50}%`,
-    '--hero-zoom': `${(content.hero_zoom ?? 100) / 100}`,
-  };
+  // The backend stores the final cropped image, so the same pixels are shown on every device.
+  const heroStyle = {};
 
   return (
     <div id="top" className="page">

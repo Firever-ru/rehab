@@ -26,6 +26,7 @@ class SiteContent(Base):
     description_3 = Column(Text, nullable=False, default="")
     quotes_json = Column(Text, nullable=False, default="[]")
     hero_image = Column(String(300), nullable=True)
+    hero_source_image = Column(String(300), nullable=True)
     hero_position_x = Column(Integer, nullable=False, default=50)
     hero_position_y = Column(Integer, nullable=False, default=50)
     hero_zoom = Column(Integer, nullable=False, default=100)

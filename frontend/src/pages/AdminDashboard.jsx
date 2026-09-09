@@ -9,6 +9,7 @@ const EMPTY_CONTENT = {
   description_3: '',
   quotes: [],
   hero_image: null,
+  hero_source_image: null,
   hero_position_x: 50,
   hero_position_y: 50,
   hero_zoom: 100,
@@ -91,7 +92,7 @@ export default function AdminDashboard() {
       const form = new FormData();
       form.append('file', file);
       const saved = await api.post('/content/hero-image', form);
-      setContent((c) => ({ ...c, hero_image: saved.hero_image, hero_position_x: 50, hero_position_y: 50, hero_zoom: 100 }));
+      setContent((c) => ({ ...c, hero_image: saved.hero_image, hero_source_image: saved.hero_source_image || saved.hero_image, hero_position_x: 50, hero_position_y: 50, hero_zoom: 100 }));
       flash('Фото обновлено. Настройте кадрирование и сохраните изменения.');
     } catch {
       flash('Не удалось загрузить фото (JPEG/PNG/WEBP, до 8 МБ).');
@@ -230,7 +231,7 @@ export default function AdminDashboard() {
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadPhoto} disabled={uploading} />
             </label>
 
-            {content.hero_image && (
+            {(content.hero_source_image || content.hero_image) && (
               <>
                 <div
                   ref={cropRef}
@@ -266,7 +267,7 @@ export default function AdminDashboard() {
                   }}
                 >
                   <img
-                    src={content.hero_image}
+                    src={content.hero_source_image || content.hero_image}
                     alt="Предпросмотр главного фото"
                     draggable="false"
                     style={{

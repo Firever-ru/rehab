@@ -54,6 +54,7 @@ class ContentOut(BaseModel):
     description_3: str = ""
     quotes: list[str]
     hero_image: str | None = None
+    hero_source_image: str | None = None
     hero_position_x: int = 50
     hero_position_y: int = 50
     hero_zoom: int = 100
