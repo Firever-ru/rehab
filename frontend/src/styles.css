@@ -8,10 +8,13 @@ button,input,textarea{font:inherit}
 button{cursor:pointer}
 a{text-decoration:none;color:inherit}
 
-.site-header{position:absolute;z-index:10;top:0;left:0;right:0;height:82px;padding:0 clamp(20px,5vw,70px);display:flex;align-items:center;gap:30px;color:#f6eddd;background:linear-gradient(#171713b8,transparent);font-size:12px}
-.site-header nav{display:flex;gap:28px;margin:auto}
+.site-header{position:absolute;z-index:10;top:0;left:0;right:0;height:82px;padding:0 clamp(20px,5vw,70px);display:flex;align-items:center;color:#f6eddd;background:linear-gradient(#171713b8,transparent);font-size:12px}
+.site-nav{position:absolute;left:50%;top:0;height:82px;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:28px;white-space:nowrap}
 .site-header nav a{opacity:.82}
 .site-header nav a:hover{opacity:1}
+.header-actions{margin-left:auto;display:flex;align-items:center;gap:22px}
+.header-admin{font-size:10px;letter-spacing:.06em;text-transform:uppercase;opacity:.72;white-space:nowrap}
+.header-admin:hover{opacity:1}
 .header-phone{font-weight:600;white-space:nowrap}
 
 .quote{min-height:260px;background:linear-gradient(135deg,#20201a,#2c2a22);display:grid;place-items:center;text-align:center;color:#f0e3c8;padding:105px 25px 55px}
@@ -106,8 +109,9 @@ th{font-size:9px;color:#817967;text-transform:uppercase}
 
 @media(max-width:800px){
 .site-header{height:68px;padding:0 18px}
-.site-header nav{gap:18px;margin:0 auto}
-.site-header nav a:nth-child(2){display:none}
+.site-nav{height:68px;gap:18px}
+.header-actions{gap:12px}
+.header-admin{font-size:8px}
 .header-phone{font-size:10px}
 .quote{min-height:230px;padding-top:90px}
 .hero{height:720px}
@@ -123,7 +127,11 @@ th{font-size:9px;color:#817967;text-transform:uppercase}
 }
 
 @media(max-width:520px){
+.hero-image{transform:scale(calc(var(--hero-zoom,1) * 1.18));}
+.site-nav{gap:13px}
 .site-header nav a{font-size:9px}
+.header-actions{gap:8px}
+.header-admin{font-size:7px}
 .header-phone{font-size:9px}
 .quote{min-height:210px;padding:85px 18px 40px}
 .quote div{font-size:34px}

@@ -3,14 +3,17 @@ export default function Header({ phone = '+7 (993) 030-00-44' }) {
 
   return (
     <header className="site-header">
-      <nav>
+      <nav className="site-nav">
         <a href="#about">О центре</a>
         <a href="#application">Заявка</a>
         <a href="#contacts">Контакты</a>
       </nav>
-      <a className="header-phone" href={telHref}>
-        {phone}
-      </a>
+      <div className="header-actions">
+        <a className="header-admin" href="/admin">Служебный вход</a>
+        <a className="header-phone" href={telHref}>
+          {phone}
+        </a>
+      </div>
     </header>
   );
 }
