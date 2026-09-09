@@ -9,7 +9,7 @@ export default function Header({ phone = '+7 (993) 030-00-44' }) {
         <a href="#contacts">Контакты</a>
       </nav>
       <div className="header-actions">
-        <a className="header-admin" href="/admin">Служебный вход</a>
+        <a className="header-admin" href="/admin" aria-label="Служебный вход" title="Служебный вход"></a>
         <a className="header-phone" href={telHref}>
           {phone}
         </a>
