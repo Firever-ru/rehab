@@ -266,7 +266,7 @@ export default function AdminDashboard() {
 
                   <div
                     ref={cropRef}
-                    className={`hero-cropper ${mobile ? 'mobile-preview' : ''} ${dragRef.current ? 'is-dragging' : ''}`}
+                    className={`hero-cropper ${mobile ? 'mobile-preview' : 'desktop-preview'} ${dragRef.current ? 'is-dragging' : ''}`}
                     onPointerDown={(e) => {
                       e.currentTarget.setPointerCapture(e.pointerId);
                       dragRef.current = {

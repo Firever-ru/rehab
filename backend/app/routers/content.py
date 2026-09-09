@@ -18,7 +18,7 @@ settings = get_settings()
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_IMAGE_SIZE = 8 * 1024 * 1024
-DESKTOP_ASPECT = 16 / 7
+DESKTOP_ASPECT = 16 / 9
 MOBILE_ASPECT = 9 / 16
 
 

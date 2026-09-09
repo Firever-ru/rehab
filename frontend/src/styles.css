@@ -156,9 +156,11 @@ th{font-size:9px;color:#817967;text-transform:uppercase}
 .image-controls input[type=range]{padding:0;border:0;background:transparent}
 
 @media(max-width:800px){
-.hero-cropper{aspect-ratio:9/16;max-width:360px;max-height:620px}
 .crop-help{font-size:9px;bottom:10px}
 }
+
+.hero-cropper.mobile-preview{aspect-ratio:9/16;max-width:360px;max-height:620px}
+.hero-cropper.desktop-preview{aspect-ratio:16/9;max-width:900px;max-height:none}
 
 /* The backend stores a fixed cropped 16:7 image. Fill the hero box so the same complete crop is shown on every viewport size. */
 
