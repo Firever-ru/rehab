@@ -12,6 +12,12 @@ const DEFAULT_CONTENT = {
   quotes: ['Иногда новая жизнь начинается с одного честного решения.'],
   hero_image: null,
   hero_mobile_image: null,
+  hero_position_x: 50,
+  hero_position_y: 50,
+  hero_zoom: 100,
+  hero_mobile_position_x: 50,
+  hero_mobile_position_y: 50,
+  hero_mobile_zoom: 100,
 };
 
 const DEFAULT_CONTACTS = {
@@ -73,6 +79,7 @@ export default function Home() {
 
       <section className="hero">
         <picture>
+          <source media="(min-width: 801px) and (max-width: 1100px) and (orientation: portrait)" srcSet={content.hero_mobile_image || heroImage} />
           <source media="(max-width: 800px)" srcSet={content.hero_mobile_image || heroImage} />
           <img className="hero-image" src={heroImage} alt={content.title || 'Второе дыхание'} />
         </picture>

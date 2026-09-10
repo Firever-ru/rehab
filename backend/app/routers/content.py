@@ -18,7 +18,6 @@ settings = get_settings()
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_IMAGE_SIZE = 8 * 1024 * 1024
-MAX_SOURCE_DIMENSION = 3000
 DESKTOP_ASPECT = 16 / 9
 MOBILE_ASPECT = 9 / 16
 
@@ -28,6 +27,10 @@ def _get_or_create_content(db: Session) -> SiteContent:
     if row is None:
         row = SiteContent(id=1)
         db.add(row)
+        db.commit()
+        db.refresh(row)
+    if not row.hero_source_image and row.hero_image:
+        row.hero_source_image = row.hero_image
         db.commit()
         db.refresh(row)
     return row
@@ -51,57 +54,18 @@ def _content_out(row: SiteContent) -> ContentOut:
         description_3=row.description_3 or "",
         quotes=json.loads(row.quotes_json),
         hero_image=row.hero_image,
-        hero_source_image=row.hero_source_image,
+        hero_source_image=row.hero_source_image or row.hero_image,
         hero_mobile_image=row.hero_mobile_image,
-        hero_crop_x=row.hero_crop_x,
-        hero_crop_y=row.hero_crop_y,
-        hero_crop_w=row.hero_crop_w,
-        hero_crop_h=row.hero_crop_h,
-        hero_mobile_crop_x=row.hero_mobile_crop_x,
-        hero_mobile_crop_y=row.hero_mobile_crop_y,
-        hero_mobile_crop_w=row.hero_mobile_crop_w,
-        hero_mobile_crop_h=row.hero_mobile_crop_h,
+        hero_position_x=row.hero_position_x,
+        hero_position_y=row.hero_position_y,
+        hero_zoom=row.hero_zoom,
+        hero_mobile_position_x=row.hero_mobile_position_x,
+        hero_mobile_position_y=row.hero_mobile_position_y,
+        hero_mobile_zoom=row.hero_mobile_zoom,
     )
 
 
-def _default_crop(width: int, height: int, aspect: float) -> tuple[float, float, float, float]:
-    """The largest aspect-ratio rectangle that fits fully inside the photo,
-    centered — i.e. the same starting frame a photo app shows before you
-    touch the crop handles."""
-    image_aspect = width / height
-    if image_aspect > aspect:
-        crop_h = 1.0
-        crop_w = aspect / image_aspect
-    else:
-        crop_w = 1.0
-        crop_h = image_aspect / aspect
-    return (1 - crop_w) / 2, (1 - crop_h) / 2, crop_w, crop_h
-
-
-def _normalize_and_save(contents: bytes) -> tuple[str, int, int]:
-    """Correct EXIF rotation, downscale very large photos, and save as an
-    optimized JPEG. No cropping happens here — the full frame is kept so the
-    admin can choose the crop rectangle against the complete photo."""
-    try:
-        with Image.open(BytesIO(contents)) as opened:
-            image = ImageOps.exif_transpose(opened).convert("RGB")
-            width, height = image.size
-            longest = max(width, height)
-            if longest > MAX_SOURCE_DIMENSION:
-                scale = MAX_SOURCE_DIMENSION / longest
-                width = max(1, int(round(width * scale)))
-                height = max(1, int(round(height * scale)))
-                image = image.resize((width, height), Image.Resampling.LANCZOS)
-            out_name = f"hero_source_{uuid.uuid4().hex}.jpg"
-            out_path = os.path.join(settings.media_dir, out_name)
-            os.makedirs(settings.media_dir, exist_ok=True)
-            image.save(out_path, "JPEG", quality=92, optimize=True)
-            return f"/media/{out_name}", width, height
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Не удалось обработать изображение: {exc}") from exc
-
-
-def _crop_and_save(source_url: str, crop_x: float, crop_y: float, crop_w: float, crop_h: float, prefix: str) -> str:
+def _crop_and_save(source_url: str, position_x: int, position_y: int, zoom: int, aspect: float, prefix: str) -> str:
     filename = source_url.rsplit("/", 1)[-1]
     source_path = os.path.join(settings.media_dir, filename)
     if not os.path.isfile(source_path):
@@ -111,23 +75,35 @@ def _crop_and_save(source_url: str, crop_x: float, crop_y: float, crop_w: float,
         with Image.open(source_path) as opened:
             image = ImageOps.exif_transpose(opened).convert("RGB")
             width, height = image.size
+            base_w = width
+            base_h = int(round(width / aspect))
+            if base_h > height:
+                base_h = height
+                base_w = int(round(height * aspect))
 
-            left = max(0, min(width - 1, int(round(crop_x * width))))
-            top = max(0, min(height - 1, int(round(crop_y * height))))
-            crop_w_px = max(1, min(width - left, int(round(crop_w * width))))
-            crop_h_px = max(1, min(height - top, int(round(crop_h * height))))
+            zoom_factor = max(1.0, min(2.2, zoom / 100))
+            crop_w = max(1, int(round(base_w / zoom_factor)))
+            crop_h = max(1, int(round(base_h / zoom_factor)))
+            crop_w = min(crop_w, width)
+            crop_h = min(crop_h, height)
 
-            cropped = image.crop((left, top, left + crop_w_px, top + crop_h_px))
+            max_left = width - crop_w
+            max_top = height - crop_h
+            left = int(round(max_left * max(0, min(100, position_x)) / 100))
+            top = int(round(max_top * max(0, min(100, position_y)) / 100))
+
+            cropped = image.crop((left, top, left + crop_w, top + crop_h))
             target_w = min(1920, cropped.width)
-            target_h = max(1, int(round(target_w * cropped.height / cropped.width)))
+            target_h = int(round(target_w / aspect))
+            if target_h > cropped.height:
+                target_h = cropped.height
+                target_w = int(round(target_h * aspect))
             cropped = cropped.resize((target_w, target_h), Image.Resampling.LANCZOS)
 
             out_name = f"{prefix}_{uuid.uuid4().hex}.jpg"
             out_path = os.path.join(settings.media_dir, out_name)
             cropped.save(out_path, "JPEG", quality=92, optimize=True)
             return f"/media/{out_name}"
-    except HTTPException:
-        raise
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Не удалось обработать изображение: {exc}") from exc
 
@@ -138,14 +114,14 @@ def _generate_crops(row: SiteContent):
         row.hero_mobile_image = None
         return
     row.hero_image = _crop_and_save(
-        row.hero_source_image, row.hero_crop_x, row.hero_crop_y, row.hero_crop_w, row.hero_crop_h, "hero_desktop"
+        row.hero_source_image, row.hero_position_x, row.hero_position_y, row.hero_zoom, DESKTOP_ASPECT, "hero_desktop"
     )
     row.hero_mobile_image = _crop_and_save(
         row.hero_source_image,
-        row.hero_mobile_crop_x,
-        row.hero_mobile_crop_y,
-        row.hero_mobile_crop_w,
-        row.hero_mobile_crop_h,
+        row.hero_mobile_position_x,
+        row.hero_mobile_position_y,
+        row.hero_mobile_zoom,
+        MOBILE_ASPECT,
         "hero_mobile",
     )
 
@@ -163,14 +139,12 @@ def update_content(data: ContentIn, db: Session = Depends(get_db), admin: str = 
     row.description_2 = data.description_2
     row.description_3 = data.description_3
     row.quotes_json = json.dumps(data.quotes, ensure_ascii=False)
-    row.hero_crop_x = data.hero_crop_x
-    row.hero_crop_y = data.hero_crop_y
-    row.hero_crop_w = data.hero_crop_w
-    row.hero_crop_h = data.hero_crop_h
-    row.hero_mobile_crop_x = data.hero_mobile_crop_x
-    row.hero_mobile_crop_y = data.hero_mobile_crop_y
-    row.hero_mobile_crop_w = data.hero_mobile_crop_w
-    row.hero_mobile_crop_h = data.hero_mobile_crop_h
+    row.hero_position_x = data.hero_position_x
+    row.hero_position_y = data.hero_position_y
+    row.hero_zoom = data.hero_zoom
+    row.hero_mobile_position_x = data.hero_mobile_position_x
+    row.hero_mobile_position_y = data.hero_mobile_position_y
+    row.hero_mobile_zoom = data.hero_mobile_zoom
 
     if row.hero_source_image:
         _generate_crops(row)
@@ -196,17 +170,21 @@ async def upload_hero_image(
     except Exception as exc:
         raise HTTPException(status_code=400, detail="Файл не является корректным изображением") from exc
 
-    source_url, width, height = _normalize_and_save(contents)
+    os.makedirs(settings.media_dir, exist_ok=True)
+    ext = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}[file.content_type]
+    filename = f"hero_source_{uuid.uuid4().hex}.{ext}"
+    source_url = f"/media/{filename}"
+    with open(os.path.join(settings.media_dir, filename), "wb") as f:
+        f.write(contents)
 
     row = _get_or_create_content(db)
     row.hero_source_image = source_url
-    row.hero_crop_x, row.hero_crop_y, row.hero_crop_w, row.hero_crop_h = _default_crop(width, height, DESKTOP_ASPECT)
-    (
-        row.hero_mobile_crop_x,
-        row.hero_mobile_crop_y,
-        row.hero_mobile_crop_w,
-        row.hero_mobile_crop_h,
-    ) = _default_crop(width, height, MOBILE_ASPECT)
+    row.hero_position_x = 50
+    row.hero_position_y = 50
+    row.hero_zoom = 100
+    row.hero_mobile_position_x = 50
+    row.hero_mobile_position_y = 50
+    row.hero_mobile_zoom = 100
     _generate_crops(row)
     db.commit()
     db.refresh(row)

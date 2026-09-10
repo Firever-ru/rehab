@@ -20,13 +20,9 @@ a{text-decoration:none;color:inherit}
 .quote div{font-family:'Cormorant Garamond';font-size:clamp(36px,5vw,64px);line-height:.95;max-width:1000px}
 .quote i{color:#d1b887}
 
-.hero{position:relative;width:100%;aspect-ratio:16/9;max-height:900px;background:#171713;display:flex;align-items:flex-end;overflow:hidden}
+.hero{height:clamp(680px,82vh,900px);background:#171713;position:relative;display:flex;align-items:flex-end;overflow:hidden}
 .hero>picture{position:absolute;inset:0;display:block;width:100%;height:100%}
-/* The server bakes in a real 16:9 (desktop) / 9:16 (mobile) crop chosen in
-   the admin panel's crop tool, so the box below matches that ratio exactly
-   and object-fit:cover is only a safety net (relevant on very wide
-   monitors where max-height caps the box below its natural 16:9 height). */
-.hero-image{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center}
+.hero-image{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center;transform:none;will-change:auto}
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,#16150f25 0%,#16150f10 35%,#0b0b096e 100%)}
 .hero-content{position:relative;z-index:2;color:#f5ead6;text-align:center;width:100%;padding:0 20px 90px}
 .hero-title{font-family:'Cormorant Garamond',serif;font-size:clamp(40px,6vw,82px);line-height:.9;letter-spacing:.01em;text-shadow:0 3px 20px #0008}
@@ -102,13 +98,19 @@ th{font-size:9px;color:#817967;text-transform:uppercase}
 .image-editor{border-top:1px solid #ddd4c4;margin-top:25px;padding-top:25px}
 .hero-editor-preview{position:relative;width:100%;max-width:720px;height:320px;overflow:hidden;background:#171713;border:1px solid #d8cfbf;margin:12px 0 22px}
 .hero-editor-preview img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:var(--hero-position-x,50%) var(--hero-position-y,50%);transform:scale(var(--hero-zoom,1));transform-origin:center;will-change:transform}
-.image-controls{display:flex;gap:20px}
+.image-controls{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 .image-controls label{margin:0}
+.image-controls input[type=range]{padding:0;border:0;background:transparent}
 .field-hint{display:block;font-size:9px;line-height:1.5;color:#8b8376;margin-top:7px}
 
 .success{text-align:center;padding:25px 5px}
 .success-mark{margin:auto;width:44px;height:44px;border:1px solid #a58b61;border-radius:50%;display:grid;place-items:center;color:#8d754e}
 .success h3{font-family:'Cormorant Garamond';font-size:30px}
+
+@media (min-width:801px) and (max-width:1100px) and (orientation:portrait){
+.hero{height:720px}
+.hero-content{padding-bottom:60px}
+}
 
 @media(max-width:800px){
 .site-header{height:68px;padding:0 18px}
@@ -116,7 +118,7 @@ th{font-size:9px;color:#817967;text-transform:uppercase}
 .header-actions{gap:12px}
 .header-phone{font-size:10px}
 .quote{min-height:230px;padding-top:90px}
-.hero{aspect-ratio:9/16;max-height:800px}
+.hero{height:720px}
 .hero-content{padding-bottom:60px}
 .intro,.application,.contacts{grid-template-columns:1fr;gap:45px;padding-top:80px;padding-bottom:80px}
 .descriptions{grid-template-columns:1fr;gap:55px;padding-top:75px;padding-bottom:75px}
@@ -124,6 +126,7 @@ th{font-size:9px;color:#817967;text-transform:uppercase}
 .dashboard aside{display:none}
 .dash-main{padding:20px}
 .two{grid-template-columns:1fr}
+.image-controls{grid-template-columns:1fr}
 .hero-editor-preview{height:240px}
 }
 
@@ -134,42 +137,50 @@ th{font-size:9px;color:#817967;text-transform:uppercase}
 .header-phone{font-size:9px}
 .quote{min-height:210px;padding:85px 18px 40px}
 .quote div{font-size:34px}
-.hero{max-height:640px}
+.hero{height:680px}
 .hero-title{font-size:42px}
 .application-form{padding:25px}
 .modal-box{padding:30px 22px}
 .contacts{gap:30px}
 }
 
-/* Crop tool: shows the whole source photo, with a draggable/resizable
-   aspect-locked selection rectangle on top — like a phone gallery's crop
-   screen. .crop-canvas is sized to the photo's own aspect ratio so the
-   entire image is visible edge-to-edge with no letterboxing. */
-.crop-canvas{position:relative;width:100%;max-width:640px;overflow:visible;background:#171713;border:1px solid #d8cfbf;margin:12px 0 18px;touch-action:none;user-select:none}
-.crop-canvas-loading{display:flex;align-items:center;justify-content:center;aspect-ratio:16/9;color:#9b9484;font-size:12px}
-.crop-canvas-img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain;pointer-events:none;user-select:none}
-.crop-dim{position:absolute;background:rgba(0,0,0,.55);pointer-events:none}
-.crop-box{position:absolute;border:2px solid rgba(255,250,240,.95);cursor:grab;box-sizing:border-box}
-.crop-canvas.is-dragging .crop-box{cursor:grabbing}
-.crop-grid-v,.crop-grid-h{position:absolute;display:block;background:rgba(255,250,240,.28);pointer-events:none}
-.crop-grid-v{top:0;bottom:0;width:1px}.crop-grid-v:nth-child(1){left:33.333%}.crop-grid-v:nth-child(2){left:66.666%}
-.crop-grid-h{left:0;right:0;height:1px}.crop-grid-h:nth-child(3){top:33.333%}.crop-grid-h:nth-child(4){top:66.666%}
-.crop-handle{position:absolute;display:block;width:20px;height:20px;background:#fffaf0;border:2px solid #20201b;border-radius:4px;pointer-events:auto;z-index:4;box-sizing:border-box;touch-action:none}
-.crop-handle-top-left{left:-10px;top:-10px;cursor:nwse-resize}
-.crop-handle-top-right{right:-10px;top:-10px;cursor:nesw-resize}
-.crop-handle-bottom-right{right:-10px;bottom:-10px;cursor:nwse-resize}
-.crop-handle-bottom-left{left:-10px;bottom:-10px;cursor:nesw-resize}
-.crop-handle:hover{background:#fff}
-.crop-help{position:absolute;left:50%;bottom:-30px;transform:translateX(-50%);padding:6px 10px;color:#8b8376;font-size:10px;letter-spacing:.02em;white-space:nowrap;pointer-events:none;text-align:center}
+/* Interactive hero crop editor */
+.hero-cropper{position:relative;width:100%;max-width:900px;aspect-ratio:16/9;overflow:hidden;background:#171713;border:1px solid #d8cfbf;margin:12px 0 18px;cursor:grab;touch-action:none;user-select:none}
+.hero-cropper.is-dragging{cursor:grabbing}
+.hero-cropper>img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:var(--hero-position-x,50%) var(--hero-position-y,50%);transform:scale(var(--hero-zoom,1));transform-origin:center;pointer-events:none;will-change:transform,object-position}
+.crop-frame{position:absolute;inset:0;pointer-events:none;border:2px solid rgba(255,250,240,.9);box-shadow:0 0 0 9999px rgba(0,0,0,.12)}
+.crop-frame span,.crop-frame i{position:absolute;display:block;background:rgba(255,250,240,.65);pointer-events:none}
+.crop-frame span:nth-child(1),.crop-frame span:nth-child(2),.crop-frame span:nth-child(3),.crop-frame span:nth-child(4){width:16px;height:2px}
+.crop-frame span:nth-child(1){left:-2px;top:24%}.crop-frame span:nth-child(2){right:-2px;top:24%}.crop-frame span:nth-child(3){left:-2px;bottom:24%}.crop-frame span:nth-child(4){right:-2px;bottom:24%}
+.crop-frame i:nth-child(5),.crop-frame i:nth-child(6),.crop-frame i:nth-child(7),.crop-frame i:nth-child(8){width:2px;height:16px}
+.crop-frame i:nth-child(5){left:24%;top:-2px}.crop-frame i:nth-child(6){right:24%;top:-2px}.crop-frame i:nth-child(7){left:24%;bottom:-2px}.crop-frame i:nth-child(8){right:24%;bottom:-2px}
+.crop-help{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);padding:8px 12px;background:rgba(23,23,19,.72);color:#f5ead6;font-size:10px;letter-spacing:.04em;white-space:nowrap;pointer-events:none;opacity:.95}
+.crop-reset{align-self:end;height:44px}
+.image-controls{align-items:end}
+.image-controls label{margin:0}
+.image-controls input[type=range]{padding:0;border:0;background:transparent}
 
 @media(max-width:800px){
-.crop-help{font-size:9px;white-space:normal;width:100%;bottom:-40px}
+.crop-help{font-size:9px;bottom:10px}
 }
 
-.crop-reset{align-self:end;height:44px}
-.image-controls{align-items:end;margin-top:34px}
-.image-controls label{margin:0}
+.hero-cropper.mobile-preview{aspect-ratio:9/16;max-width:360px;max-height:620px}
+.hero-cropper.desktop-preview{aspect-ratio:16/9;max-width:900px;max-height:none}
+
+/* The backend stores a fixed cropped 16:7 image. Fill the hero box so the same complete crop is shown on every viewport size. */
 
 .crop-mode-switch{display:flex;gap:8px;margin:12px 0 14px}
 .crop-mode-switch button{border:1px solid #cdbfa8;background:#fffaf0;color:#6e6558;padding:10px 16px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;cursor:pointer}
 .crop-mode-switch button.active{background:#20201b;color:#eee5d4;border-color:#20201b}
+.hero-cropper.mobile-preview{margin-left:0}
+
+/* Crop handles: resize the selected area from sides and corners while keeping its aspect ratio. */
+.crop-frame{position:absolute;inset:0;pointer-events:none;border:2px solid rgba(255,250,240,.9);box-shadow:0 0 0 9999px rgba(0,0,0,.12)}
+.crop-frame .crop-grid-v,.crop-frame .crop-grid-h{position:absolute;display:block;background:rgba(255,250,240,.22);pointer-events:none}
+.crop-frame .crop-grid-v{top:0;bottom:0;width:1px}.crop-frame .crop-grid-v:nth-child(1){left:33.333%}.crop-frame .crop-grid-v:nth-child(2){left:66.666%}
+.crop-frame .crop-grid-h{left:0;right:0;height:1px}.crop-frame .crop-grid-h:nth-child(3){top:33.333%}.crop-frame .crop-grid-h:nth-child(4){top:66.666%}
+.crop-handle{position:absolute;display:block;width:18px;height:18px;background:#fffaf0;border:2px solid #20201b;border-radius:3px;pointer-events:auto;z-index:4;box-sizing:border-box}
+.crop-handle-top-left{left:-9px;top:-9px;cursor:nwse-resize}.crop-handle-top{left:50%;top:-9px;transform:translateX(-50%);cursor:ns-resize}.crop-handle-top-right{right:-9px;top:-9px;cursor:nesw-resize}
+.crop-handle-right{right:-9px;top:50%;transform:translateY(-50%);cursor:ew-resize}.crop-handle-bottom-right{right:-9px;bottom:-9px;cursor:nwse-resize}.crop-handle-bottom{left:50%;bottom:-9px;transform:translateX(-50%);cursor:ns-resize}
+.crop-handle-bottom-left{left:-9px;bottom:-9px;cursor:nesw-resize}.crop-handle-left{left:-9px;top:50%;transform:translateY(-50%);cursor:ew-resize}
+.crop-frame .crop-handle:hover{background:#fff}
