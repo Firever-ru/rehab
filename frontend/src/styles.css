@@ -107,9 +107,25 @@ th{font-size:9px;color:#817967;text-transform:uppercase}
 .success-mark{margin:auto;width:44px;height:44px;border:1px solid #a58b61;border-radius:50%;display:grid;place-items:center;color:#8d754e}
 .success h3{font-family:'Cormorant Garamond';font-size:30px}
 
+/* Планшет в портретной ориентации должен использовать ту же
+   компоновку hero, что и телефон. */
 @media (min-width:801px) and (max-width:1100px) and (orientation:portrait){
+.site-header{height:68px;padding:0 18px}
+.site-nav{height:68px;gap:18px}
+.header-actions{gap:12px}
+.header-phone{font-size:10px}
+.quote{min-height:230px;padding-top:90px}
 .hero{height:720px}
-.hero-content{padding-bottom:60px}
+.hero-content{padding:0 20px 60px}
+.hero-title{font-size:42px}
+.intro,.application,.contacts{grid-template-columns:1fr;gap:45px;padding-top:80px;padding-bottom:80px}
+.descriptions{grid-template-columns:1fr;gap:55px;padding-top:75px;padding-bottom:75px}
+.dashboard{grid-template-columns:1fr}
+.dashboard aside{display:none}
+.dash-main{padding:20px}
+.two{grid-template-columns:1fr}
+.image-controls{grid-template-columns:1fr}
+.hero-editor-preview{height:240px}
 }
 
 @media(max-width:800px){

@@ -79,6 +79,7 @@ export default function Home() {
 
       <section className="hero">
         <picture>
+          {/* Планшет portrait использует тот же mobile-кроп, что и телефон. */}
           <source media="(min-width: 801px) and (max-width: 1100px) and (orientation: portrait)" srcSet={content.hero_mobile_image || heroImage} />
           <source media="(max-width: 800px)" srcSet={content.hero_mobile_image || heroImage} />
           <img className="hero-image" src={heroImage} alt={content.title || 'Второе дыхание'} />
