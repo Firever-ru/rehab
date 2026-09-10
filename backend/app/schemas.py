@@ -42,12 +42,14 @@ class ContentIn(BaseModel):
     description_2: str = ""
     description_3: str = ""
     quotes: list[str] = Field(default_factory=list, max_length=20)
-    hero_position_x: int = Field(default=50, ge=0, le=100)
-    hero_position_y: int = Field(default=50, ge=0, le=100)
-    hero_zoom: int = Field(default=100, ge=100, le=220)
-    hero_mobile_position_x: int = Field(default=50, ge=0, le=100)
-    hero_mobile_position_y: int = Field(default=50, ge=0, le=100)
-    hero_mobile_zoom: int = Field(default=100, ge=100, le=220)
+    hero_crop_x: float = Field(default=0.0, ge=0, le=1)
+    hero_crop_y: float = Field(default=0.0, ge=0, le=1)
+    hero_crop_w: float = Field(default=1.0, gt=0, le=1)
+    hero_crop_h: float = Field(default=1.0, gt=0, le=1)
+    hero_mobile_crop_x: float = Field(default=0.0, ge=0, le=1)
+    hero_mobile_crop_y: float = Field(default=0.0, ge=0, le=1)
+    hero_mobile_crop_w: float = Field(default=1.0, gt=0, le=1)
+    hero_mobile_crop_h: float = Field(default=1.0, gt=0, le=1)
 
 
 class ContentOut(BaseModel):
@@ -59,12 +61,14 @@ class ContentOut(BaseModel):
     hero_image: str | None = None
     hero_source_image: str | None = None
     hero_mobile_image: str | None = None
-    hero_position_x: int = 50
-    hero_position_y: int = 50
-    hero_zoom: int = 100
-    hero_mobile_position_x: int = 50
-    hero_mobile_position_y: int = 50
-    hero_mobile_zoom: int = 100
+    hero_crop_x: float = 0.0
+    hero_crop_y: float = 0.0
+    hero_crop_w: float = 1.0
+    hero_crop_h: float = 1.0
+    hero_mobile_crop_x: float = 0.0
+    hero_mobile_crop_y: float = 0.0
+    hero_mobile_crop_w: float = 1.0
+    hero_mobile_crop_h: float = 1.0
 
 
 class ContactsIn(BaseModel):
