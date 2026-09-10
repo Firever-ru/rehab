@@ -2,6 +2,166 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api.js';
 
+// Fraction (0..1) crop rectangle geometry, shared by the crop tool below and
+// used to keep the "Сбросить кадр" reset in sync with what the backend does
+// for a freshly uploaded photo: the largest aspect-ratio rectangle that fits
+// centered inside the full image.
+function defaultCrop(naturalW, naturalH, aspect) {
+  const imageAspect = naturalW / naturalH;
+  let w;
+  let h;
+  if (imageAspect > aspect) {
+    h = 1;
+    w = aspect / imageAspect;
+  } else {
+    w = 1;
+    h = imageAspect / aspect;
+  }
+  return { x: (1 - w) / 2, y: (1 - h) / 2, w, h };
+}
+
+// Opposite-corner anchor + outward sign for each of the 4 resize handles.
+const CORNER_ANCHOR = {
+  'top-left': { anchor: 'bottom-right', sx: -1, sy: -1 },
+  'top-right': { anchor: 'bottom-left', sx: 1, sy: -1 },
+  'bottom-right': { anchor: 'top-left', sx: 1, sy: 1 },
+  'bottom-left': { anchor: 'top-right', sx: -1, sy: 1 },
+};
+
+const MIN_CROP_FRACTION = 0.12;
+
+/**
+ * A real "photo app" style crop tool: shows the whole source photo and lets
+ * the admin drag an aspect-locked rectangle around on top of it — move it by
+ * dragging inside, resize it (keeping the 16:9 / 9:16 ratio) by dragging any
+ * of the 4 corners, exactly like cropping a photo on a phone.
+ */
+function CropTool({ src, aspect, aspectLabel, crop, onChange }) {
+  const canvasRef = useRef(null);
+  const dragRef = useRef(null);
+  const [natural, setNatural] = useState(null);
+  const [dragging, setDragging] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setNatural(null);
+    const img = new Image();
+    img.onload = () => {
+      if (!cancelled) setNatural({ w: img.naturalWidth, h: img.naturalHeight });
+    };
+    img.src = src;
+    return () => {
+      cancelled = true;
+    };
+  }, [src]);
+
+  if (!natural) {
+    return <div className="crop-canvas crop-canvas-loading">Загружаем фото…</div>;
+  }
+
+  const imageAspect = natural.w / natural.h;
+
+  function pointerFraction(e) {
+    const rect = canvasRef.current.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) / rect.width,
+      y: (e.clientY - rect.top) / rect.height,
+    };
+  }
+
+  function handlePointerDown(e) {
+    if (e.target.closest('.crop-handle')) return;
+    if (!e.target.closest('.crop-box')) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = {
+      type: 'move',
+      pointerId: e.pointerId,
+      start: pointerFraction(e),
+      crop: { ...crop },
+    };
+    setDragging(true);
+  }
+
+  function handlePointerMove(e) {
+    const drag = dragRef.current;
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    const pointer = pointerFraction(e);
+
+    if (drag.type === 'move') {
+      const dx = pointer.x - drag.start.x;
+      const dy = pointer.y - drag.start.y;
+      const x = Math.max(0, Math.min(1 - drag.crop.w, drag.crop.x + dx));
+      const y = Math.max(0, Math.min(1 - drag.crop.h, drag.crop.y + dy));
+      onChange({ ...drag.crop, x, y });
+      return;
+    }
+
+    const { anchorX, anchorY, sx, sy } = drag;
+    const maxW = Math.min(1, aspect / imageAspect);
+    const maxWx = sx > 0 ? 1 - anchorX : anchorX;
+    const maxHy = sy > 0 ? 1 - anchorY : anchorY;
+    const maxWy = maxHy * aspect / imageAspect;
+    const maxWBound = Math.max(MIN_CROP_FRACTION, Math.min(maxW, maxWx, maxWy));
+
+    const diagX = Math.max(0, sx > 0 ? pointer.x - anchorX : anchorX - pointer.x);
+    const diagY = Math.max(0, sy > 0 ? pointer.y - anchorY : anchorY - pointer.y);
+    const desiredW = Math.max(diagX, diagY * aspect / imageAspect);
+    const w = Math.max(MIN_CROP_FRACTION, Math.min(maxWBound, desiredW));
+    const h = w * imageAspect / aspect;
+    const x = sx > 0 ? anchorX : anchorX - w;
+    const y = sy > 0 ? anchorY : anchorY - h;
+    onChange({ x, y, w, h });
+  }
+
+  function endDrag(e) {
+    if (dragRef.current?.pointerId === e.pointerId) dragRef.current = null;
+    setDragging(false);
+  }
+
+  function handleCornerDown(handle) {
+    return (e) => {
+      e.stopPropagation();
+      e.currentTarget.closest('.crop-canvas').setPointerCapture(e.pointerId);
+      const { anchor, sx, sy } = CORNER_ANCHOR[handle];
+      const anchorX = anchor.includes('right') ? crop.x + crop.w : crop.x;
+      const anchorY = anchor.includes('bottom') ? crop.y + crop.h : crop.y;
+      dragRef.current = { type: 'resize', pointerId: e.pointerId, anchorX, anchorY, sx, sy };
+      setDragging(true);
+    };
+  }
+
+  return (
+    <div
+      ref={canvasRef}
+      className={`crop-canvas ${dragging ? 'is-dragging' : ''}`}
+      style={{ aspectRatio: `${natural.w} / ${natural.h}` }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+    >
+      <img src={src} alt="Исходное фото" draggable="false" className="crop-canvas-img" />
+
+      <div className="crop-dim" style={{ left: 0, top: 0, right: 0, height: `${crop.y * 100}%` }} />
+      <div className="crop-dim" style={{ left: 0, bottom: 0, right: 0, height: `${(1 - crop.y - crop.h) * 100}%` }} />
+      <div className="crop-dim" style={{ left: 0, top: `${crop.y * 100}%`, width: `${crop.x * 100}%`, height: `${crop.h * 100}%` }} />
+      <div className="crop-dim" style={{ right: 0, top: `${crop.y * 100}%`, width: `${(1 - crop.x - crop.w) * 100}%`, height: `${crop.h * 100}%` }} />
+
+      <div
+        className="crop-box"
+        style={{ left: `${crop.x * 100}%`, top: `${crop.y * 100}%`, width: `${crop.w * 100}%`, height: `${crop.h * 100}%` }}
+      >
+        <span className="crop-grid-v" /><span className="crop-grid-v" />
+        <span className="crop-grid-h" /><span className="crop-grid-h" />
+        {['top-left', 'top-right', 'bottom-right', 'bottom-left'].map((handle) => (
+          <span key={handle} className={`crop-handle crop-handle-${handle}`} onPointerDown={handleCornerDown(handle)} />
+        ))}
+      </div>
+      <div className="crop-help">{aspectLabel} — тяните за угол, чтобы изменить размер, или за рамку, чтобы сдвинуть</div>
+    </div>
+  );
+}
+
 const EMPTY_CONTENT = {
   title: '',
   description: '',
@@ -11,12 +171,14 @@ const EMPTY_CONTENT = {
   hero_image: null,
   hero_source_image: null,
   hero_mobile_image: null,
-  hero_position_x: 50,
-  hero_position_y: 50,
-  hero_zoom: 100,
-  hero_mobile_position_x: 50,
-  hero_mobile_position_y: 50,
-  hero_mobile_zoom: 100,
+  hero_crop_x: 0,
+  hero_crop_y: 0,
+  hero_crop_w: 1,
+  hero_crop_h: 1,
+  hero_mobile_crop_x: 0,
+  hero_mobile_crop_y: 0,
+  hero_mobile_crop_w: 1,
+  hero_mobile_crop_h: 1,
 };
 
 export default function AdminDashboard() {
@@ -33,8 +195,6 @@ export default function AdminDashboard() {
   const [uploading, setUploading] = useState(false);
   const [cropMode, setCropMode] = useState('desktop');
   const [notice, setNotice] = useState('');
-  const cropRef = useRef(null);
-  const dragRef = useRef(null);
 
   useEffect(() => {
     api.get('/content').then(setContent).catch(() => {});
@@ -64,12 +224,14 @@ export default function AdminDashboard() {
         description_2: content.description_2,
         description_3: content.description_3,
         quotes: content.quotes.filter((q) => q.trim() !== ''),
-        hero_position_x: Number(content.hero_position_x),
-        hero_position_y: Number(content.hero_position_y),
-        hero_zoom: Number(content.hero_zoom),
-        hero_mobile_position_x: Number(content.hero_mobile_position_x),
-        hero_mobile_position_y: Number(content.hero_mobile_position_y),
-        hero_mobile_zoom: Number(content.hero_mobile_zoom),
+        hero_crop_x: content.hero_crop_x,
+        hero_crop_y: content.hero_crop_y,
+        hero_crop_w: content.hero_crop_w,
+        hero_crop_h: content.hero_crop_h,
+        hero_mobile_crop_x: content.hero_mobile_crop_x,
+        hero_mobile_crop_y: content.hero_mobile_crop_y,
+        hero_mobile_crop_w: content.hero_mobile_crop_w,
+        hero_mobile_crop_h: content.hero_mobile_crop_h,
       });
       setContent((c) => ({ ...c, ...saved }));
       flash('Изменения сохранены');
@@ -100,7 +262,7 @@ export default function AdminDashboard() {
       const form = new FormData();
       form.append('file', file);
       const saved = await api.post('/content/hero-image', form);
-      setContent((c) => ({ ...c, ...saved, hero_position_x: 50, hero_position_y: 50, hero_zoom: 100, hero_mobile_position_x: 50, hero_mobile_position_y: 50, hero_mobile_zoom: 100 }));
+      setContent((c) => ({ ...c, ...saved }));
       flash('Фото обновлено. Настройте кадрирование и сохраните изменения.');
     } catch {
       flash('Не удалось загрузить фото (JPEG/PNG/WEBP, до 8 МБ).');
@@ -241,17 +403,21 @@ export default function AdminDashboard() {
 
             {(content.hero_source_image || content.hero_image) && (() => {
               const mobile = cropMode === 'mobile';
-              const xKey = mobile ? 'hero_mobile_position_x' : 'hero_position_x';
-              const yKey = mobile ? 'hero_mobile_position_y' : 'hero_position_y';
-              const zoomKey = mobile ? 'hero_mobile_zoom' : 'hero_zoom';
+              const xKey = mobile ? 'hero_mobile_crop_x' : 'hero_crop_x';
+              const yKey = mobile ? 'hero_mobile_crop_y' : 'hero_crop_y';
+              const wKey = mobile ? 'hero_mobile_crop_w' : 'hero_crop_w';
+              const hKey = mobile ? 'hero_mobile_crop_h' : 'hero_crop_h';
+              const aspect = mobile ? 9 / 16 : 16 / 9;
               const previewSrc = content.hero_source_image || content.hero_image;
-              const previewStyle = {
-                '--hero-position-x': `${content[xKey] ?? 50}%`,
-                '--hero-position-y': `${content[yKey] ?? 50}%`,
-                '--hero-zoom': `${(content[zoomKey] ?? 100) / 100}`,
+              const crop = {
+                x: content[xKey] ?? 0,
+                y: content[yKey] ?? 0,
+                w: content[wKey] ?? 1,
+                h: content[hKey] ?? 1,
               };
 
-              const updateCrop = (changes) => setContent((c) => ({ ...c, ...changes }));
+              const updateCrop = (next) =>
+                setContent((c) => ({ ...c, [xKey]: next.x, [yKey]: next.y, [wKey]: next.w, [hKey]: next.h }));
 
               return (
                 <>
@@ -264,100 +430,32 @@ export default function AdminDashboard() {
                     </button>
                   </div>
 
-                  <div
-                    ref={cropRef}
-                    className={`hero-cropper ${mobile ? 'mobile-preview' : 'desktop-preview'} ${dragRef.current ? 'is-dragging' : ''}`}
-                    onPointerDown={(e) => {
-                      if (e.target.closest('.crop-handle')) return;
-                      e.currentTarget.setPointerCapture(e.pointerId);
-                      dragRef.current = {
-                        type: 'move',
-                        pointerId: e.pointerId,
-                        startX: e.clientX,
-                        startY: e.clientY,
-                        x: Number(content[xKey]) || 50,
-                        y: Number(content[yKey]) || 50,
-                      };
-                      e.currentTarget.classList.add('is-dragging');
-                    }}
-                    onPointerMove={(e) => {
-                      const drag = dragRef.current;
-                      const box = cropRef.current;
-                      if (!drag || !box || e.pointerId !== drag.pointerId) return;
-                      const rect = box.getBoundingClientRect();
-
-                      if (drag.type === 'move') {
-                        const sensitivityX = 100 / Math.max(1, rect.width);
-                        const sensitivityY = 100 / Math.max(1, rect.height);
-                        const nextX = Math.max(0, Math.min(100, drag.x - (e.clientX - drag.startX) * sensitivityX));
-                        const nextY = Math.max(0, Math.min(100, drag.y - (e.clientY - drag.startY) * sensitivityY));
-                        updateCrop({ [xKey]: Math.round(nextX), [yKey]: Math.round(nextY) });
-                        return;
-                      }
-
-                      const dx = e.clientX - drag.startX;
-                      const dy = e.clientY - drag.startY;
-                      const distance = Math.max(Math.abs(dx), Math.abs(dy));
-                      const direction = drag.handle.includes('right') || drag.handle.includes('bottom') ? -1 : 1;
-                      const sensitivity = 0.55;
-                      const nextZoom = Math.max(100, Math.min(220, Math.round(drag.zoom + direction * distance * sensitivity)));
-                      updateCrop({ [zoomKey]: nextZoom });
-                    }}
-                    onPointerUp={(e) => {
-                      if (dragRef.current?.pointerId === e.pointerId) dragRef.current = null;
-                      e.currentTarget.classList.remove('is-dragging');
-                    }}
-                    onPointerCancel={(e) => {
-                      if (dragRef.current?.pointerId === e.pointerId) dragRef.current = null;
-                      e.currentTarget.classList.remove('is-dragging');
-                    }}
-                  >
-                    <img src={previewSrc} alt="Предпросмотр кадрирования" draggable="false" style={previewStyle} />
-                    <div className="crop-frame" aria-hidden="true">
-                      <span className="crop-grid-v" /><span className="crop-grid-v" />
-                      <span className="crop-grid-h" /><span className="crop-grid-h" />
-                      {['top-left','top','top-right','right','bottom-right','bottom','bottom-left','left'].map((handle) => (
-                        <span
-                          key={handle}
-                          className={`crop-handle crop-handle-${handle}`}
-                          onPointerDown={(e) => {
-                            e.stopPropagation();
-                            e.currentTarget.parentElement.parentElement.setPointerCapture(e.pointerId);
-                            dragRef.current = {
-                              type: 'resize',
-                              pointerId: e.pointerId,
-                              handle,
-                              startX: e.clientX,
-                              startY: e.clientY,
-                              zoom: Number(content[zoomKey]) || 100,
-                            };
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <div className="crop-help">
-                      {mobile ? 'Телефон · 9:16 — тяните за края или углы' : 'Компьютер · 16:9 — тяните за края или углы'}
-                    </div>
-                  </div>
+                  <CropTool
+                    key={`${previewSrc}-${cropMode}`}
+                    src={previewSrc}
+                    aspect={aspect}
+                    aspectLabel={mobile ? 'Телефон · 9:16' : 'Компьютер · 16:9'}
+                    crop={crop}
+                    onChange={updateCrop}
+                  />
 
                   <div className="image-controls">
-                    <label>
-                      Масштаб: {content[zoomKey] ?? 100}%
-                      <input
-                        type="range" min="100" max="220" value={content[zoomKey] ?? 100}
-                        onChange={(e) => updateCrop({ [zoomKey]: Number(e.target.value) })}
-                      />
-                    </label>
                     <button
                       type="button"
                       className="outline crop-reset"
-                      onClick={() => updateCrop({ [xKey]: 50, [yKey]: 50, [zoomKey]: 100 })}
+                      onClick={() => {
+                        const img = new Image();
+                        img.onload = () => {
+                          updateCrop(defaultCrop(img.naturalWidth, img.naturalHeight, aspect));
+                        };
+                        img.src = previewSrc;
+                      }}
                     >
                       Сбросить кадр
                     </button>
                   </div>
                   <p className="field-hint">
-                    Для одного и того же исходного фото задаётся отдельный кадр для компьютера и телефона. На телефоне сохраняется вертикальная композиция 9:16, без растягивания.
+                    Для одного и того же исходного фото задаётся отдельный кадр для компьютера и телефона: выделите на фото область, которая попадёт на сайт. Рамка всегда сохраняет пропорции 16:9 (компьютер) или 9:16 (телефон) — можно только двигать её и менять размер за углы, как при обрезке фото на телефоне.
                   </p>
                 </>
               );
