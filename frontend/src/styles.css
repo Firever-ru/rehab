@@ -111,6 +111,9 @@ th{font-size:9px;color:#817967;text-transform:uppercase}
 .success h3{font-family:'Cormorant Garamond';font-size:30px}
 
 @media(max-width:800px){
+/* Mobile: show the entire original photo. Desktop styling is untouched. */
+.hero-image{object-fit:contain;object-position:center;background:#171713}
+
 .site-header{height:68px;padding:0 18px}
 .site-nav{height:68px;gap:18px}
 .header-actions{gap:12px}
@@ -175,5 +178,5 @@ th{font-size:9px;color:#817967;text-transform:uppercase}
 .crop-mode-switch button.active{background:#20201b;color:#eee5d4;border-color:#20201b}
 .quote{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px}
 .quote-tags{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:640px}
-.quote-tags span{border:1px solid #c4ad8455;border-radius:999px;padding:8px 18px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#e6d9bd;background:#ffffff0d}
-@media(max-width:520px){.quote-tags span{font-size:9px;padding:7px 14px}}
+.quote-tags span{border:1px solid #c4ad8455;border-radius:999px;padding:9px 19px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#e6d9bd;background:#ffffff0d}
+@media(max-width:520px){.quote-tags span{font-size:10px;padding:8px 15px}}

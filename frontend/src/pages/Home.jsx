@@ -56,6 +56,9 @@ export default function Home() {
   }, [open]);
 
   const heroImage = content.hero_image || heroFallback;
+  // On mobile use the complete source photo so it is never additionally cropped.
+  // Desktop keeps the existing server-generated 16:9 image unchanged.
+  const heroMobileImage = content.hero_source_image || content.hero_mobile_image || heroImage;
   const quote = content.quotes[quoteIndex] || DEFAULT_CONTENT.quotes[0];
   const telHref = `tel:${contacts.phone.replace(/[^\d+]/g, '')}`;
   const instagramUrl = contacts.instagram.startsWith('http')
@@ -79,7 +82,7 @@ export default function Home() {
 
       <section className="hero">
         <picture>
-          <source media="(max-width: 800px)" srcSet={content.hero_mobile_image || heroImage} />
+          <source media="(max-width: 800px)" srcSet={heroMobileImage} />
           <img className="hero-image" src={heroImage} alt={content.title || 'Второе дыхание'} />
         </picture>
         <div className="hero-overlay"></div>
