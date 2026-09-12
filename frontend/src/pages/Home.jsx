@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Header from '../components/Header.jsx';
 import ApplicationForm from '../components/ApplicationForm.jsx';
 import { api } from '../lib/api.js';
-import heroFallback from '../assets/hero.jfif';
+import heroFallback from '../assets/hero.jpg';
 
 const DEFAULT_CONTENT = {
   title: 'Реабилитационный центр «Второе дыхание»',
@@ -69,6 +69,12 @@ export default function Home() {
 
       <section className="quote quote-top">
         <div>«{quote}»</div>
+        <div className="quote-tags">
+          <span>алкоголизм</span>
+          <span>наркомания</span>
+          <span>игромания</span>
+          <span>зависимость</span>
+        </div>
       </section>
 
       <section className="hero">
