@@ -143,7 +143,8 @@ th{font-size:9px;color:#817967;text-transform:uppercase}
   color:#f5ead6;
   background:#171713;
 }
-.hero-title{text-shadow:none}
+.hero-title{display:none}
+.hero-content{padding-top:20px}
 
 .site-header{height:68px;padding:0 18px}
 .site-nav{height:68px;gap:18px}
