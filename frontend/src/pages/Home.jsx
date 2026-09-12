@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Header from '../components/Header.jsx';
 import ApplicationForm from '../components/ApplicationForm.jsx';
 import { api } from '../lib/api.js';
-import heroFallback from '../assets/hero.jfif';
+import heroFallback from '../assets/hero.jpg';
 
 const DEFAULT_CONTENT = {
   title: 'Реабилитационный центр «Второе дыхание»',
@@ -12,12 +12,6 @@ const DEFAULT_CONTENT = {
   quotes: ['Иногда новая жизнь начинается с одного честного решения.'],
   hero_image: null,
   hero_mobile_image: null,
-  hero_position_x: 50,
-  hero_position_y: 50,
-  hero_zoom: 100,
-  hero_mobile_position_x: 50,
-  hero_mobile_position_y: 50,
-  hero_mobile_zoom: 100,
 };
 
 const DEFAULT_CONTACTS = {
@@ -62,6 +56,9 @@ export default function Home() {
   }, [open]);
 
   const heroImage = content.hero_image || heroFallback;
+  // On mobile use the complete source photo so it is never additionally cropped.
+  // Desktop keeps the existing server-generated 16:9 image unchanged.
+  const heroMobileImage = content.hero_source_image || content.hero_mobile_image || heroImage;
   const quote = content.quotes[quoteIndex] || DEFAULT_CONTENT.quotes[0];
   const telHref = `tel:${contacts.phone.replace(/[^\d+]/g, '')}`;
   const instagramUrl = contacts.instagram.startsWith('http')
@@ -75,12 +72,17 @@ export default function Home() {
 
       <section className="quote quote-top">
         <div>«{quote}»</div>
+        <div className="quote-tags">
+          <span>алкоголизм</span>
+          <span>наркомания</span>
+          <span>игромания</span>
+          <span>зависимость</span>
+        </div>
       </section>
 
       <section className="hero">
         <picture>
-          <source media="(min-width: 801px) and (max-width: 1100px) and (orientation: portrait)" srcSet={content.hero_mobile_image || heroImage} />
-          <source media="(max-width: 800px)" srcSet={content.hero_mobile_image || heroImage} />
+          <source media="(max-width: 800px)" srcSet={heroMobileImage} />
           <img className="hero-image" src={heroImage} alt={content.title || 'Второе дыхание'} />
         </picture>
         <div className="hero-overlay"></div>
