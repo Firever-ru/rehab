@@ -4,4 +4,4 @@ Allow: /
 Disallow: /admin
 Disallow: /api
 
-Sitemap: https://www.vtoroedyhaniecenter.ru/sitemap.xml
+Sitemap: https://vtoroedyhaniecenter.ru/sitemap.xml
